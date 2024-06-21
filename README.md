@@ -11,4 +11,5 @@ INSTALLATION:
 4. ./install.sh
 
 USAGE:
-stegocrack -f /path/to/image.jpg -w /path/to/wordlist
+cd asset
+stegocrack -f /path/to/image.jpg -w wordlist.txt
