@@ -1,47 +1,35 @@
 A simple tool for encoding and decoding messages in images using Least Significant Bit (LSB) Steganography. This version does not involve any password protection, but you can encode and decode messages using a custom method.
 
 Table of Contents
-Installation
 
-Usage
-
-Encoding Mode
-
-Decoding Mode
-
-Requirements
-
-How It Works
-
-License
+1. Installation
+2. Usage
+ Encoding Mode
+ Decoding Mode
+3. Requirements
+4. How It Works
 
 Installation
 Clone the repository:
 
-bash
-Copy
-Edit
 git clone https://github.com/yourusername/stegocrack-lsb.git
 cd stegocrack-lsb
+
 Install necessary dependencies:
 
-bash
-Copy
-Edit
 pip3 install -r requirements.txt
+
 This will install any required Python libraries.
 
 Usage
+
 Encoding Mode
 In encoding mode, you can hide a secret message inside an image using LSB steganography.
 
 Syntax:
 
-bash
-Copy
-Edit
 python3 stegocrack.py -f <image_file> -m <message> --encode
--f <image_file>: Path to the image file (e.g., image.jpg).
+-f <image_file>: Path to the image file (e.g., image.jpg)
 
 -m <message>: The message you want to hide inside the image.
 
@@ -51,10 +39,8 @@ python3 stegocrack.py -f <image_file> -m <message> --encode
 
 Example:
 
-bash
-Copy
-Edit
 python3 stegocrack.py -f /path/to/image.jpg -m "This is a secret message" --encode
+
 This will embed the message "This is a secret message" into image.jpg and save it as encoded_image.png.
 
 Decoding Mode
@@ -62,34 +48,30 @@ In decoding mode, you can extract a hidden message from an image.
 
 Syntax:
 
-bash
-Copy
-Edit
 python3 stegocrack.py -f <encoded_image> --decode
+
 -f <encoded_image>: Path to the image containing the hidden message.
 
 --decode: Flag to enable decoding mode.
 
 Example:
 
-bash
-Copy
-Edit
 python3 stegocrack.py -f /path/to/encoded_image.png --decode
+
 This will extract and print the hidden message from the encoded image.
 
 Requirements
+
 Python 3.x: The script is compatible with Python 3.
 
 Pillow (PIL): For image processing.
 
 To install the dependencies, run:
 
-bash
-Copy
-Edit
 pip3 install -r requirements.txt
+
 How It Works
+
 Encoding:
 
 The script takes a message and converts it into binary format.
