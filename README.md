@@ -10,6 +10,11 @@ INSTALLATION:
 3. chmod +x *
 4. ./install.sh
 
-USAGE:
-1. cd asset
-2. stegocrack -f /path/to/image.jpg -w wordlist.txt
+How to Use:
+To encode a message:
+python3 stegocrack.py -f <path_to_image> -p <password> --encode -m "Your secret message"
+This will embed the message in the image file.
+
+To crack a password:
+python3 stegocrack.py -f <path_to_image> -w <path_to_wordlist> -p <password>
+This will attempt to crack the password using the provided wordlist.
