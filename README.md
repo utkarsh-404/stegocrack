@@ -28,7 +28,7 @@ In encoding mode, you can hide a secret message inside an image using LSB stegan
 
 Syntax:
 
-python3 stegocrack.py -f <image_file> -m <message> --encode
+python3 src/stegocrack -f /path/to/img -m message --encode
 -f <image_file>: Path to the image file (e.g., image.jpg)
 
 -m <message>: The message you want to hide inside the image.
