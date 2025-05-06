@@ -1,20 +1,108 @@
-# stegocrack
-A tool to crack Image Steganography password
+A simple tool for encoding and decoding messages in images using Least Significant Bit (LSB) Steganography. This version does not involve any password protection, but you can encode and decode messages using a custom method.
 
-ABOUT:
-Steganography is a technique used to hide confedential information in non-confedential media like images, audios, or any other media format. StegoCrack is a tool which uses Dictionary attack to crack Steganography of Image and save the hidden message into a file. Dictionary attack is a attack which uses wordlist to try and crack password, I have made a wordlist of Top 10,000 Common Passwords that are used in internet. Users can also give path to their custom wordlist.
+Table of Contents
+Installation
 
-INSTALLATION:
-1. git clone https://github.com/utkarsh-404/stegocrack/
-2. cd stegocrack
-3. chmod +x *
-4. ./install.sh
+Usage
 
-How to Use:
-To encode a message:
-python3 stegocrack.py -f <path_to_image> -p <password> --encode -m "Your secret message"
-This will embed the message in the image file.
+Encoding Mode
 
-To crack a password:
-python3 stegocrack.py -f <path_to_image> -w <path_to_wordlist> -p <password>
-This will attempt to crack the password using the provided wordlist.
+Decoding Mode
+
+Requirements
+
+How It Works
+
+License
+
+Installation
+Clone the repository:
+
+bash
+Copy
+Edit
+git clone https://github.com/yourusername/stegocrack-lsb.git
+cd stegocrack-lsb
+Install necessary dependencies:
+
+bash
+Copy
+Edit
+pip3 install -r requirements.txt
+This will install any required Python libraries.
+
+Usage
+Encoding Mode
+In encoding mode, you can hide a secret message inside an image using LSB steganography.
+
+Syntax:
+
+bash
+Copy
+Edit
+python3 stegocrack.py -f <image_file> -m <message> --encode
+-f <image_file>: Path to the image file (e.g., image.jpg).
+
+-m <message>: The message you want to hide inside the image.
+
+--encode: Flag to enable encoding mode.
+
+-o <output_image>: (Optional) Path to the output encoded image.
+
+Example:
+
+bash
+Copy
+Edit
+python3 stegocrack.py -f /path/to/image.jpg -m "This is a secret message" --encode
+This will embed the message "This is a secret message" into image.jpg and save it as encoded_image.png.
+
+Decoding Mode
+In decoding mode, you can extract a hidden message from an image.
+
+Syntax:
+
+bash
+Copy
+Edit
+python3 stegocrack.py -f <encoded_image> --decode
+-f <encoded_image>: Path to the image containing the hidden message.
+
+--decode: Flag to enable decoding mode.
+
+Example:
+
+bash
+Copy
+Edit
+python3 stegocrack.py -f /path/to/encoded_image.png --decode
+This will extract and print the hidden message from the encoded image.
+
+Requirements
+Python 3.x: The script is compatible with Python 3.
+
+Pillow (PIL): For image processing.
+
+To install the dependencies, run:
+
+bash
+Copy
+Edit
+pip3 install -r requirements.txt
+How It Works
+Encoding:
+
+The script takes a message and converts it into binary format.
+
+The binary message is hidden in the least significant bit (LSB) of each pixel in the image.
+
+An EOF (End of File) marker is added to signal the end of the message.
+
+Decoding:
+
+The script extracts the least significant bit (LSB) from each pixel and reconstructs the binary message.
+
+Once the EOF marker is found, the message is decoded back to its original form.
+
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
