@@ -1,126 +1,70 @@
 #!/usr/bin/env python3
 
-import os
-import time
 import argparse
-import subprocess
-import shutil
-from colorama import Fore
-from datetime import datetime
+from PIL import Image
 
-g = Fore.LIGHTGREEN_EX
-r = Fore.LIGHTRED_EX
-p = Fore.RESET
-b = Fore.LIGHTBLUE_EX
-c = Fore.CYAN
-gb = Fore.GREEN
-pb = Fore.LIGHTWHITE_EX
+def encode_image(image_path, message, output_path="encoded_image.png"):
+    img = Image.open(image_path)
+    binary_message = ''.join(format(ord(char), '08b') for char in message) + '1111111111111110'  # EOF marker
 
-def check_steghide_installed():
-    if shutil.which("steghide") is None:
-        print(f"{r}[-] {p}Error: 'steghide' is not installed or not found in PATH.\n")
-        print(f"{p}[+] Please install it using: {g}sudo apt install steghide{p} (Linux) or {g}pkg install steghide{p} (Termux)")
-        exit(1)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
 
-print(f"""{b}
-     _                                 
- ___| |_ ___  __ _   ____  ___ _ __ __ _  ___| | __
-/ __| __/ _ \/ _` |/ ___ \/ __| '__/ _` |/ __| |/ / 
-\__ \ ||  __/ (_| |\ \_/ / (__| | | (_| | (__|   < 
-|___/\__\___|\__, | \___/\___|_|  \__,_|\___|_|\_\
-             |___/
-{p}""")
+    pixels = list(img.getdata())
+    new_pixels = []
+    msg_index = 0
 
-check_steghide_installed()
+    for pixel in pixels:
+        r, g, b = pixel
+        if msg_index < len(binary_message):
+            r = (r & ~1) | int(binary_message[msg_index])
+            msg_index += 1
+        if msg_index < len(binary_message):
+            g = (g & ~1) | int(binary_message[msg_index])
+            msg_index += 1
+        if msg_index < len(binary_message):
+            b = (b & ~1) | int(binary_message[msg_index])
+            msg_index += 1
+        new_pixels.append((r, g, b))
 
+    img.putdata(new_pixels)
+    img.save(output_path)
+    print(f"[+] Message successfully encoded into {output_path}")
 
-parser = argparse.ArgumentParser(description='Crack or encode messages in steghide files.')
-parser.add_argument('-f', '--file', help='Path to steghide file', required=True)
-parser.add_argument('-w', '--wordlist', help='Path to wordlist (for cracking)', required=False)
-parser.add_argument('-m', '--message', help='Message to hide (for encoding)', required=False)
-parser.add_argument('-p', '--password', help='Password for steghide (required for encoding and cracking)', required=True)
-parser.add_argument('--encode', help='Enable encoding mode', action='store_true')
-args = parser.parse_args()
+def decode_image(image_path):
+    img = Image.open(image_path)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
 
-# Function to encode a message inside a steghide file
-def encode_message(file, password, message):
-    try:
-        # Create a temporary file with the secret message
-        with open("secret_message.txt", 'w') as secret_file:
-            secret_file.write(message)
+    binary_data = ""
+    for pixel in list(img.getdata()):
+        for channel in pixel:
+            binary_data += str(channel & 1)
 
-        # Run steghide to encode the message
-        command = ['steghide', 'embed', '-sf', file, '-p', password, '-ef', 'secret_message.txt']
-        result = subprocess.run(command, capture_output=True, text=True)
-
-        # Remove the temporary message file
-        os.remove("secret_message.txt")
-
-        if result.returncode == 0:
-            print(f"{p}[{g}INFO{p}] {pb}Message successfully hidden inside the file.")
-        else:
-            print(f"{r}[-] {p}Failed to hide the message.")
-    except Exception as e:
-        print(f"{r}[-] {p}An error occurred during encoding: {str(e)}")
-
-# Function to crack a steghide password
-def crack_password(file, wordlist):
-    try:
-        with open(file):
-            pass
-    except FileNotFoundError:
-        print(f"{r}[-] {p}Error: Steghide file '{file}' not found.\n")
-        exit(1)
-
-    try:
-        with open(wordlist):
-            pass
-    except FileNotFoundError:
-        print(f"{r}[-] {p}Error: Wordlist file '{wordlist}' not found.\n")
-        exit(1)
-
-    try:
-        now = datetime.now()
-        print(f"{r}[!] {p}Please remember that the use of STEGOCRACK to crack steghide files should be done with proper permission and only for legitimate purposes. Do not use this tool for illegal activities or without the necessary authorization.\n")
-        time.sleep(7)
-        print(f"{p}[*] Starting @ {now.strftime('%H:%M:%S %d/%m/%Y')}\n")
-
-        with open(wordlist, 'r') as wordlist_file:
-            for line in wordlist_file:
-                time.sleep(0.05)
-                now = datetime.now()
-                password = line.strip()
-                command = ['steghide', 'extract', '-sf', file, '-p', password, '-f']
-                result = subprocess.run(command, capture_output=True, text=True)
-
-                if result.returncode == 0:
-                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Password found: {g}{password}{p}")
-                    n = now.strftime("%d-%m-%Y-%H-%M-%S")
-                    cracked_file = f"{file}-{n}.out"
-                    command_s = ['steghide', 'extract', '-sf', file, '-p', password, '-xf', cracked_file]
-                    subprocess.run(command_s, capture_output=True, text=True)
-                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Cracked file saved as: {g}{cracked_file}{p}")
-                    break
-                else:
-                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{gb}INFO{p}] {p}Incorrect password: {r}{password}{p}")
-
-            else:
-                print(f"\n{r}[-] {p}No matching password found in the wordlist.")
-
-        print(f"\n{p}[*] Ending @ {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
-
-    except Exception as e:
-        print(f"{r}[-] {p}An error occurred: {str(e)}")
+    bytes_data = [binary_data[i:i+8] for i in range(0, len(binary_data), 8)]
+    decoded_message = ""
+    for byte in bytes_data:
+        if byte == '11111110':  # EOF marker
+            break
+        decoded_message += chr(int(byte, 2))
+    print(f"[+] Hidden message: {decoded_message}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Custom LSB Steganography Tool")
+    parser.add_argument('-f', '--file', required=True, help="Path to input image")
+    parser.add_argument('-m', '--message', help="Message to encode")
+    parser.add_argument('--encode', action='store_true', help="Encode a message")
+    parser.add_argument('--decode', action='store_true', help="Decode a message")
+    parser.add_argument('-o', '--output', default="encoded_image.png", help="Output image path (for encoding)")
+
+    args = parser.parse_args()
+
     if args.encode:
-        # Ensure the message and password are provided for encoding
         if not args.message:
-            print(f"{r}[-] {p}Error: You must provide a message to encode using --message.\n")
-            exit(1)
-        encode_message(args.file, args.password, args.message)
-    elif args.wordlist:
-        # Proceed with cracking the password if wordlist is provided
-        crack_password(args.file, args.wordlist)
+            print("[-] Error: Message is required for encoding.")
+        else:
+            encode_image(args.file, args.message, args.output)
+    elif args.decode:
+        decode_image(args.file)
     else:
-        print(f"{r}[-] {p}Error: You must either provide a wordlist for cracking or a message for encoding.\n")
+        print("[-] Error: You must choose either --encode or --decode.")
