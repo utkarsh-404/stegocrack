@@ -48,7 +48,7 @@ In decoding mode, you can extract a hidden message from an image.
 
 Syntax:
 
-python3 stegocrack.py -f <encoded_image> --decode
+python3 src/stegocrack -f encoded_image.png --decode 
 
 -f <encoded_image>: Path to the image containing the hidden message.
 
