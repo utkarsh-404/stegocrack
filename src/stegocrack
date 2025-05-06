@@ -4,6 +4,7 @@ import os
 import time
 import argparse
 import subprocess
+import shutil
 from colorama import Fore
 from datetime import datetime
 
@@ -15,6 +16,12 @@ c = Fore.CYAN
 gb = Fore.GREEN
 pb = Fore.LIGHTWHITE_EX
 
+def check_steghide_installed():
+    if shutil.which("steghide") is None:
+        print(f"{r}[-] {p}Error: 'steghide' is not installed or not found in PATH.\n")
+        print(f"{p}[+] Please install it using: {g}sudo apt install steghide{p} (Linux) or {g}pkg install steghide{p} (Termux)")
+        exit(1)
+
 print(f"""{b}
      _                                 
  ___| |_ ___  __ _   ____  ___ _ __ __ _  ___| | __
@@ -24,54 +31,96 @@ print(f"""{b}
              |___/
 {p}""")
 
-parser = argparse.ArgumentParser(description='Crack the steghide file password.')
+check_steghide_installed()
+
+
+parser = argparse.ArgumentParser(description='Crack or encode messages in steghide files.')
 parser.add_argument('-f', '--file', help='Path to steghide file', required=True)
-parser.add_argument('-w', '--wordlist', help='Path to wordlist', required=True)
+parser.add_argument('-w', '--wordlist', help='Path to wordlist (for cracking)', required=False)
+parser.add_argument('-m', '--message', help='Message to hide (for encoding)', required=False)
+parser.add_argument('-p', '--password', help='Password for steghide (required for encoding and cracking)', required=True)
+parser.add_argument('--encode', help='Enable encoding mode', action='store_true')
 args = parser.parse_args()
 
-try:
-    with open(args.file):
-        pass
-except FileNotFoundError:
-    print(f"{r}[-] {p}Error: Steghide file '{args.file}' not found.\n")
-    exit(1)
+# Function to encode a message inside a steghide file
+def encode_message(file, password, message):
+    try:
+        # Create a temporary file with the secret message
+        with open("secret_message.txt", 'w') as secret_file:
+            secret_file.write(message)
 
-try:
-    with open(args.wordlist):
-        pass
-except FileNotFoundError:
-    print(f"{r}[-] {p}Error: Wordlist file '{args.wordlist}' not found.\n")
-    exit(1)
+        # Run steghide to encode the message
+        command = ['steghide', 'embed', '-sf', file, '-p', password, '-ef', 'secret_message.txt']
+        result = subprocess.run(command, capture_output=True, text=True)
 
-try:
-    now = datetime.now()
-    print(f"{r}[!] {p}Please remember that the use of STEGOCRACK to crack steghide files should be done with proper permission and only for legitimate purposes. Do not use this tool for illegal activities or without the necessary authorization.\n")
-    time.sleep(7)
-    print(f"{p}[*] Starting @ {now.strftime('%H:%M:%S %d/%m/%Y')}\n")
+        # Remove the temporary message file
+        os.remove("secret_message.txt")
 
-    with open(args.wordlist, 'r') as wordlist_file:
-        for line in wordlist_file:
-            time.sleep(0.05)
-            now = datetime.now()
-            password = line.strip()
-            command = ['steghide', 'extract', '-sf', args.file, '-p', password, '-f']
-            result = subprocess.run(command, capture_output=True, text=True)
-
-            if result.returncode == 0:
-                print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Password found: {g}{password}{p}")
-                n = now.strftime("%d-%m-%Y-%H-%M-%S")
-                cracked_file = f"{args.file}-{n}.out"
-                command_s = ['steghide', 'extract', '-sf', args.file, '-p', password, '-xf', cracked_file]
-                subprocess.run(command_s, capture_output=True, text=True)
-                print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Cracked file saved as: {g}{cracked_file}{p}")
-                break
-            else:
-                print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{gb}INFO{p}] {p}Incorrect password: {r}{password}{p}")
-
+        if result.returncode == 0:
+            print(f"{p}[{g}INFO{p}] {pb}Message successfully hidden inside the file.")
         else:
-            print(f"\n{r}[-] {p}No matching password found in the wordlist.")
+            print(f"{r}[-] {p}Failed to hide the message.")
+    except Exception as e:
+        print(f"{r}[-] {p}An error occurred during encoding: {str(e)}")
 
-    print(f"\n{p}[*] Ending @ {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
+# Function to crack a steghide password
+def crack_password(file, wordlist):
+    try:
+        with open(file):
+            pass
+    except FileNotFoundError:
+        print(f"{r}[-] {p}Error: Steghide file '{file}' not found.\n")
+        exit(1)
 
-except Exception as e:
-    print(f"{r}[-] {p}An error occurred: {str(e)}")
+    try:
+        with open(wordlist):
+            pass
+    except FileNotFoundError:
+        print(f"{r}[-] {p}Error: Wordlist file '{wordlist}' not found.\n")
+        exit(1)
+
+    try:
+        now = datetime.now()
+        print(f"{r}[!] {p}Please remember that the use of STEGOCRACK to crack steghide files should be done with proper permission and only for legitimate purposes. Do not use this tool for illegal activities or without the necessary authorization.\n")
+        time.sleep(7)
+        print(f"{p}[*] Starting @ {now.strftime('%H:%M:%S %d/%m/%Y')}\n")
+
+        with open(wordlist, 'r') as wordlist_file:
+            for line in wordlist_file:
+                time.sleep(0.05)
+                now = datetime.now()
+                password = line.strip()
+                command = ['steghide', 'extract', '-sf', file, '-p', password, '-f']
+                result = subprocess.run(command, capture_output=True, text=True)
+
+                if result.returncode == 0:
+                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Password found: {g}{password}{p}")
+                    n = now.strftime("%d-%m-%Y-%H-%M-%S")
+                    cracked_file = f"{file}-{n}.out"
+                    command_s = ['steghide', 'extract', '-sf', file, '-p', password, '-xf', cracked_file]
+                    subprocess.run(command_s, capture_output=True, text=True)
+                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{g}INFO{p}] {pb}Cracked file saved as: {g}{cracked_file}{p}")
+                    break
+                else:
+                    print(f"{p}[{c}{now.strftime('%H:%M:%S')}{p}] [{gb}INFO{p}] {p}Incorrect password: {r}{password}{p}")
+
+            else:
+                print(f"\n{r}[-] {p}No matching password found in the wordlist.")
+
+        print(f"\n{p}[*] Ending @ {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}")
+
+    except Exception as e:
+        print(f"{r}[-] {p}An error occurred: {str(e)}")
+
+if __name__ == "__main__":
+    if args.encode:
+        # Ensure the message and password are provided for encoding
+        if not args.message:
+            print(f"{r}[-] {p}Error: You must provide a message to encode using --message.\n")
+            exit(1)
+        encode_message(args.file, args.password, args.message)
+    elif args.wordlist:
+        # Proceed with cracking the password if wordlist is provided
+        crack_password(args.file, args.wordlist)
+    else:
+        print(f"{r}[-] {p}Error: You must either provide a wordlist for cracking or a message for encoding.\n")
